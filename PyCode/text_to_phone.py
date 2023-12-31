@@ -56,5 +56,5 @@ class TextPhone:
 
         # have to see how it's going to roll off, how I'm building the database, etc;
         pass
-    
-     
+
+     ##### BEFORE PUSHING, DO THE GIT IGNORE ACCORDING TO THE VENV FILE AND SEE HOW TO SET REQUIREMENTS!!!
