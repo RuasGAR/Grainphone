@@ -9,14 +9,6 @@ class Server():
     def __init__(self) -> None:
         self.audio_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.audio_server.bind(("127.0.0.1",16809))
-
-    """     
-        def accept_income(self):
-            client_socket, cl_address = self.audio_server.accept()
-            print(f"Contacted:{cl_address}")
-            self.client_socket = client_socket
-            self.client_address = cl_address 
-    """
         
     
     def send_audio(self, wav_filepath:str) -> None:
@@ -29,3 +21,10 @@ class Server():
 
     def shutdown(self) -> None:
         self.audio_server.close()
+
+
+
+
+
+
+

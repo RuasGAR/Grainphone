@@ -1,37 +1,46 @@
-from collections import dict
+
 from phonemizer.backend import EspeakBackend
 from phonemizer.separator import Separator
 from phonemizer.punctuation import Punctuation
+from phonemizer.backend.espeak.wrapper import EspeakWrapper
+from typing import Dict, List
+import pandas as pd
+import os
 
-PUNCT = Punctuation(';:,.!"?()-')
-BACKEND = EspeakBackend('pt_pt')
-SEPARATOR = Separator(phone=' ', word=None)
-
+EspeakWrapper.set_library('C:\Program Files\eSpeak NG\libespeak-ng.dll')
+DATASET = pd.read_csv('PyCode\production_data.csv', index_col=0)
+print(DATASET.head(5))
 class TextPhone:
+    
+    PUNCT = Punctuation(';:,.!"?()-')
+    SEPARATOR = Separator(phone=' ', word=None)
 
-    """ phone_audio_features should contain a dictionary of dicts with MFCC, Spectral Centroid, Spectral ... """
+    def __init__(self,backend_lang:str) -> None:
+        self.language = backend_lang
+        self.BACKEND = EspeakBackend(backend_lang)
 
-    def __init__(self, text:str) -> None:
-        self.text = PUNCT.remove(text)
-        self.lexicon = dict()
-        self.phone_filepaths = []
-        self.phone_files = []
-        self.phone_audio_features = dict()
+    def break_text_in_words(self, text:str):
+        text = self.PUNCT.remove(text) 
+        words = { w.lower() for w in text.strip().split(' ') if w}
+        return words
 
-    """ 
-        A lexicon is the actual representation in phonema, especially considering its formatting features.
-        Each of the words are broken into phone units (a py list) after removing the punctuation marks. (should I really
-        remove it? maybe it induces entonnation...)
-        composing a larger dictionary in the format:
-
-        { word: [word's phones separated by Separator]}
-    """
-    def create_lexicon(self) -> None:
+    def get_lexicon(self, words:List[str]) -> Dict[str, List[str]]:
         
-        # Segments the sentence in word units 
-        words = [w.lower() for w in self.text.strip().split(' ') if w]
+        lexicon = {
+            word: self.BACKEND.phonemize([word], separator=self.SEPARATOR,strip=True, njobs=1)
+            for word in words
+        }
+        return lexicon            
 
-        self.lexicon = BACKEND.phonemize("teste", njobs=4)
+    def rebuild_phrase_with_lexicon(self, words:List[str], lexicon: Dict[str, List[str]]) -> List[List[str]]:
+        
+        phrase = []
+        
+        for w in words:
+            phrase.append(lexicon[w])        
+        
+        return phrase
+        
 
     """ 
         For each entry in the dictionary, specifically, for each phone in its repr list,
@@ -41,14 +50,17 @@ class TextPhone:
         every piece from randomly selected people.
     """
 
-    def get_matching_filepaths(self, mode:str) -> None:
+    def get_matching_filepaths(self, phrase:List[List[str]]) -> None:
         
-        for key, value in self.lexicon.items():
-            for phone, i in iter(value):
-                if(mode=="multi_speakers"):
-                    # one random speaker for each phone, in each word
-                    speakers = [0] * len(value)
-                    self.phone_filepaths[key] = self.get_audio_filepath(phone, n_speaker=speakers[i]) 
+        for phone_repr_word in phrase:
+            # I need to access the dataset and recover one path for each of the 
+            # I can make a simple function that goes after the dataset for it;
+            # And then use it to map each phone to its chosen_file;
+            #  
+            # file_paths
+            pass
+            
+            
 
 
     # this function should be static too, see what are the rules for it
@@ -58,3 +70,21 @@ class TextPhone:
         pass
 
      ##### BEFORE PUSHING, DO THE GIT IGNORE ACCORDING TO THE VENV FILE AND SEE HOW TO SET REQUIREMENTS!!!
+
+if __name__ == "__main__":
+
+    t_2_phone = TextPhone("en-us")
+    #teste = "This is the weirdest thing I have ever seen"
+
+"""     result = t_2_phone.break_text_in_words(test_text)
+    result = t_2_phone.get_lexicon(result)
+
+    with open('text_symbols.txt', '+a', encoding='utf-8') as f:
+        print(len(result.values()))
+        for val in result.values():
+            for w in val[0].split(' '):
+                f.write(f"{w} ")
+            f.write("\t")
+        f.write('\n') """
+        
+        
