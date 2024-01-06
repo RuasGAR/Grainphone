@@ -1,3 +1,4 @@
 Dataset/
 virtual_env/
 PyCode/production_data.csv
+PyCode/__pycache__
