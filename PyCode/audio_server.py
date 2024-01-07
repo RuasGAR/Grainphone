@@ -1,30 +1,35 @@
 import socket
-from typing import Tuple, ByteString
-from os import path
+from typing import List, Tuple, ByteString
+from pathlib import Path
+from text_to_phone import TextPhone
+from pythonosc import udp_client
+from time import sleep
 
 class Server():
 
-    PD_ADDRESS = ("127.0.0.1", 9001)
+    def __init__(self,pd_ip:str,pd_port:int) -> None:
+        self.udp_client = udp_client.SimpleUDPClient(pd_ip,pd_port)
+        self.osc_address = "/wav_path"
 
-    def __init__(self) -> None:
-        self.audio_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.audio_server.bind(("127.0.0.1",16809))
-        
+    def send_audio_grains(self, words_list:List[List[str]]) -> None:
+
+        for word in words_list: 
+            for phone_wav_path in word:
+                phone_wav_path = Path("..","Dataset","Buckeye","Processed",phone_wav_path)
+                try:
+                    self.udp_client.send_message(self.osc_address, str(phone_wav_path))
+                    sleep(0.3)
+                    print(f"Sent {phone_wav_path.name} succesfully!")
+                except Exception as e:
+                    print(f"ERROR: {e}")
+
+"""     def shutdown(self) -> None:
+        self.udp_client.close() """
+
+if __name__ == "__main__":
     
-    def send_audio(self, wav_filepath:str) -> None:
-
-        with open(wav_filepath, 'rb') as wav_f:
-            wav_data = wav_f.read()
-        
-        self.audio_server.sendto(wav_data, self.PD_ADDRESS)
-        print(f"Sent {path.basename(wav_filepath)} succesfully!")
-
-    def shutdown(self) -> None:
-        self.audio_server.close()
-
-
-
-
-
-
-
+    pd_addr = ("127.0.0.1", 12001)
+    srv = Server(pd_ip=pd_addr[0], pd_port=pd_addr[1])
+    txt_ph = TextPhone("en-us")
+    res = txt_ph.granulate("testing")
+    srv.send_audio_grains(res)    

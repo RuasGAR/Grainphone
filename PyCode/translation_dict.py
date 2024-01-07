@@ -102,7 +102,9 @@ ipa_to_arpabet = {
     'tq': 'qh',
     'i:':'iy',
     'ai':'ay',
-    'ɪɹ': 'er'
+    'ɪɹ': 'er',
+    'r':'r',
+    't':'t'
 }
 
 

@@ -23,11 +23,19 @@ class TextPhone:
         self.available_phones = list(DATASET["phone"].unique())
         self.phonetic_dict = ipa_to_arpabet
 
-    def break_text_in_words(self, text:str):
+    """ 
+        Given a text, usually in a sentence, removes the punctuation and returns a list
+        with each word
+    """
+    def break_text_in_words(self, text:str)->List[str]:
         text = self.PUNCT.remove(text) 
-        words = { w.lower() for w in text.strip().split(' ') if w}
+        words = [ w.lower() for w in text.strip().split(' ') if w]
         return words
 
+    """ 
+        Given a list of words, returns a dictionary with the words themselvels as keys; and its phonetic
+        representation - a list of individual phones - as values;
+    """
     def get_lexicon(self, words:List[str]) -> Dict[str, List[str]]:
         
         lexicon = {
@@ -46,7 +54,6 @@ class TextPhone:
         if phone not in self.available_phones:
             try:
                 phone = self.phonetic_dict[phone]
-                print(phone)
                 if phone not in self.available_phones:
                     print("NOT_FOUND: Unavailable phone audio, even after conversion. Default applied.")
                     print(f"Associated Phone: {phone}")
@@ -60,7 +67,7 @@ class TextPhone:
                 print("\n")
                 return "aa"
         else:
-            return "aa"
+            return phone
             
     """ 
         For each entry in the dictionary, specifically, for each phone in its repr list,
@@ -84,23 +91,22 @@ class TextPhone:
                 word_in_phone = list(map(search_random_sample, word_in_phone))
                 phrase[i] = word_in_phone
             except Exception as e:
-                print(e);
+                print("Exception: ",e);
                 return None
         return phrase
 
+    def granulate(self, text:str) -> List[List[str]]:
+        words = self.break_text_in_words(text)
+        lexicon = self.get_lexicon(words)
+        phrase = self.rebuild_phrase_with_lexicon(words, lexicon)
+        res = self.get_matching_filepaths(phrase)    
+        return res
+    
 if __name__ == "__main__":
 
-    t_2_phone = TextPhone("en-us")
-    test = "This is the weirdest thing I have ever seen"
-    test_words = t_2_phone.break_text_in_words(test)
-    test_lex = t_2_phone.get_lexicon(test_words)
-    test_phrase = t_2_phone.rebuild_phrase_with_lexicon(test_words, test_lex)
-    res = t_2_phone.get_matching_filepaths(test_phrase)
-
-    print(res)
     
-
-"""     result = t_2_phone.break_text_in_words(test_text)
+    """     
+    result = t_2_phone.break_text_in_words(test_text)
     result = t_2_phone.get_lexicon(result)
 
     with open('text_symbols.txt', '+a', encoding='utf-8') as f:
@@ -109,6 +115,8 @@ if __name__ == "__main__":
             for w in val[0].split(' '):
                 f.write(f"{w} ")
             f.write("\t")
-        f.write('\n') """
+        f.write('\n')  
+    
+    """
         
         
