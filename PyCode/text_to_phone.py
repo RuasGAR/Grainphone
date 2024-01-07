@@ -6,7 +6,7 @@ from phonemizer.backend.espeak.wrapper import EspeakWrapper
 from typing import Dict, List
 from translation_dict import ipa_to_arpabet
 import pandas as pd
-import os
+import random
 
 EspeakWrapper.set_library('C:\Program Files\eSpeak NG\libespeak-ng.dll')
 DATASET = pd.read_csv('PyCode\production_data.csv', index_col=0)
@@ -16,12 +16,15 @@ class TextPhone:
     PUNCT = Punctuation(';:,.!"?()-')
     SEPARATOR = Separator(phone=' ', word=None)
 
+
     def __init__(self,backend_lang:str) -> None:
         self.language = backend_lang
         self.BACKEND = EspeakBackend(backend_lang)
         self.dataset = DATASET
-        self.available_phones = list(DATASET["phone"].unique())
         self.phonetic_dict = ipa_to_arpabet
+        self.speakers = list(DATASET["speaker"].unique())
+        self.recordings = list(DATASET["recording_label"].unique())
+        self.available_phones = list(DATASET["phone"].unique())
 
     """ 
         Given a text, usually in a sentence, removes the punctuation and returns a list
@@ -44,12 +47,30 @@ class TextPhone:
         }
         return lexicon            
 
+    """ 
+        For some reason, the order in which translations into phonetic representation happens doesn't follow
+        the real order of an array - instead, they start from the shortest to the longest word.
+        In order to rebuild the order - and the sense - of the original text, we can use both the 
+        previously segmented word, as well as its lexicon.
+    """
+
     def rebuild_phrase_with_lexicon(self, words:List[str], lexicon: Dict[str, List[str]]) -> List[List[str]]:
         phrase = []
         for w in words:
             phrase.append(lexicon[w])            
         return phrase
     
+    """ 
+        We are dealing with 2 translations simultaneously: espeakNG uses IPA official set of Unicode characters,
+        which are not represented in the same way as the Buckeye Dataset (which uses ARPAbet, a more english-focused form).
+        In order to achieve a translation, I've used ChatGPT to provide me with a mapping between some of the representations
+        I had (after phonemizing some samples) and the actual notation in the wav folder structure, for example.
+        This function exhaust verificiation to check if the IPA fonema really does not have a form in 
+        ARPAbet representation.
+        To make things simple, whenever we don't find the phonema, we print it and return a default value
+        instead - which obviously compromises the understanding.  
+    """
+
     def check_phonema(self, phone):
         if phone not in self.available_phones:
             try:
@@ -72,16 +93,25 @@ class TextPhone:
     """ 
         For each entry in the dictionary, specifically, for each phone in its repr list,
         it is required to search for the matching audio file of the specific phone.
-        Since we actually have more than one speaker, a util function will be used to add some custom
-        randomization, with functionalities such as: taking all of the recordings of a same person, chosen randomly; or 
-        every piece from randomly selected people.
+        Since we actually have more than one speaker, a util-nested structure will be used to add some custom
+        randomization, even though the user will never be able to select which speaker to get from.
+        The random layer comes in relation to all recordings coming from one or more speakers:
+            - same_speaker = True -> all phoneme are going to be retrieved from the same person;
+            - same_speaker = False -> can be composed by different speech corpus;
     """
 
-    def get_matching_filepaths(self, phrase:List[List[str]]) -> List[List[str]]:
+    def get_matching_filepaths(self, phrase:List[List[str]], same_speaker:bool=True) -> List[List[str]]:
+
+        n_speakers = len(self.speakers)-1
         
-        # query lambda function -> select a random sample from the phone category
-        # and retrieve its wav path
-        search_random_sample = lambda p: self.dataset.query(f'phone == "{p}"').sample(1)["wav_path"].values[0]
+        n_rand_speaker = random.randint(1, n_speakers)
+        random_speaker = f's0{n_rand_speaker}' if n_rand_speaker < 10 else f's{n_rand_speaker}'
+    
+        if same_speaker:
+            search_random_sample = lambda p: self.dataset.query(f'phone=="{p}" and speaker=="{random_speaker}"').sample(1)["wav_path"].values[0]        
+        else:
+            search_random_sample = lambda p: self.dataset.query(f'phone=="{p}"').sample(1)["wav_path"].values[0]
+        
        
         # has to go over the index, so it doesn't create a new copy
         for i in range(len(phrase)):
@@ -94,29 +124,17 @@ class TextPhone:
                 print("Exception: ",e);
                 return None
         return phrase
+    
+    """ 
+        Straightforward script function for getting the final result - a list made of lists 
+        of each phoneme path - given an entry text. 
+    """
 
-    def granulate(self, text:str) -> List[List[str]]:
+    def granulate(self, text:str, same_speaker:bool=True) -> List[List[str]]:
         words = self.break_text_in_words(text)
         lexicon = self.get_lexicon(words)
         phrase = self.rebuild_phrase_with_lexicon(words, lexicon)
-        res = self.get_matching_filepaths(phrase)    
+        res = self.get_matching_filepaths(phrase,same_speaker=same_speaker)    
         return res
     
-if __name__ == "__main__":
-
-    
-    """     
-    result = t_2_phone.break_text_in_words(test_text)
-    result = t_2_phone.get_lexicon(result)
-
-    with open('text_symbols.txt', '+a', encoding='utf-8') as f:
-        print(len(result.values()))
-        for val in result.values():
-            for w in val[0].split(' '):
-                f.write(f"{w} ")
-            f.write("\t")
-        f.write('\n')  
-    
-    """
-        
         
