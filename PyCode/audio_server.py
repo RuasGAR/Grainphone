@@ -18,11 +18,11 @@ class Server():
                 phone_wav_path = Path("..","Dataset","Buckeye","Processed",phone_wav_path)
                 try:
                     self.udp_client.send_message(self.osc_address, str(phone_wav_path))
-                    sleep(0.3)
+                    sleep(0.166)
                     print(f"Sent {phone_wav_path.name} succesfully!")
                 except Exception as e:
                     print(f"ERROR: {e}")
-            rand_silence = random()*random() + 2 
+            rand_silence = random()*random() + 1 
             sleep(rand_silence)
 
 """     def shutdown(self) -> None:
@@ -30,9 +30,10 @@ class Server():
 
 if __name__ == "__main__":
     
-    pd_addr = ("127.0.0.1", 12001)
+    pd_addr = ("127.0.0.1", 13001)
     srv = Server(pd_ip=pd_addr[0], pd_port=pd_addr[1])
     txt_ph = TextPhone("en-us")
-    res = txt_ph.granulate("testing test", True)
+    res = txt_ph.granulate("Hello, meet Radu", True)
     print(res)
     srv.send_audio_grains(res)    
+ 
