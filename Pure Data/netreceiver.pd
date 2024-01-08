@@ -14,9 +14,10 @@
 #X obj 67 302 any2symbol;
 #X msg 40 134 listen 13001;
 #X msg 40 349 next \$1;
-#X obj 58 396 clone phone 16;
-#X obj 50 547 dac~;
-#X obj 102 479 rev2~ 100 50 3000 30;
+#X obj 67 401 clone phone 16;
+#X obj 62 698 dac~;
+#X obj 153 698 dac~;
+#X obj 67 569 rev2~ 100 80 3000 60;
 #X connect 1 0 0 0;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
@@ -30,8 +31,8 @@
 #X connect 12 0 14 0;
 #X connect 13 0 1 0;
 #X connect 14 0 15 0;
-#X connect 15 0 17 0;
-#X connect 17 0 16 0;
-#X connect 17 1 16 1;
-#X connect 17 2 16 0;
-#X connect 17 3 16 1;
+#X connect 15 0 18 0;
+#X connect 18 0 16 0;
+#X connect 18 1 16 1;
+#X connect 18 2 17 0;
+#X connect 18 3 17 1;

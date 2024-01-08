@@ -105,7 +105,7 @@ class TextPhone:
 
         n_speakers = len(self.speakers)-1
         
-        n_rand_speaker = 3 #random.randint(1, n_speakers)
+        n_rand_speaker = 6 #random.randint(1, n_speakers)
         random_speaker = f's0{n_rand_speaker}' if n_rand_speaker < 10 else f's{n_rand_speaker}'
     
         if same_speaker:
